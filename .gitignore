@@ -25,5 +25,4 @@ __pycache__/
 !/.vscode/cmake-variants.yaml
 !/.vscode/launch.json
 # custom
-/data/
 /.devcontainer/metavision.list

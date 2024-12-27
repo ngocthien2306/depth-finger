@@ -1,0 +1,80 @@
+F:
+  cols: 3
+  data:
+  - 1.699854451244935e-07
+  - -6.4416211404463e-07
+  - 0.00041301249941867984
+  - 1.014462533904906e-06
+  - 6.824449343292886e-08
+  - 0.0004032481661728373
+  - -0.0021983721431009045
+  - -0.0037041635749554564
+  - 1.0
+  dt: d
+  rows: 3
+  type-id: opencv_matrix
+camera_distortion_coefficients:
+  cols: 5
+  data:
+  - -0.164
+  - 0.108
+  - 0.0014
+  - -0.00307
+  - 0.0
+  dt: d
+  rows: 1
+  type-id: opencv_matrix
+camera_intrinsic_matrix:
+  cols: 3
+  data:
+  - 1841.0
+  - 0.0
+  - 299.0
+  - 0.0
+  - 940.0
+  - 270.0
+  - 0.0
+  - 0.0
+  - 1.0
+  dt: d
+  rows: 3
+  type-id: opencv_matrix
+projector_intrinsic_matrix:
+  cols: 3
+  data:
+  - 9163.0
+  - 0.0
+  - 19.0
+  - 0.0
+  - 2042.0
+  - 823.0
+  - 0.0
+  - 0.0
+  - 1.0
+  dt: d
+  rows: 3
+  type-id: opencv_matrix
+relative_rotation:
+  cols: 3
+  data:
+  - 0.781885084314173
+  - -0.09899143045123467
+  - -0.21820476144773474
+  - -0.024087882815907596
+  - 0.9988864395953232
+  - -0.0367970051315556
+  - 0.231291248162233
+  - -0.006562175060511027
+  - 0.9725218811829434
+  dt: d
+  rows: 3
+  type-id: opencv_matrix
+relative_translation:
+  cols: 1
+  data:
+  - 0.112
+  - -0.095
+  - 0.083
+  dt: d
+  rows: 3
+  type-id: opencv_matrix
