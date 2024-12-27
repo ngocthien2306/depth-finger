@@ -95,7 +95,9 @@ class RobustTriggerFinder:
     frame_callback: Callable[[np.ndarray], None]
     pool: "Pool"
 
-    frame_paused_thresh_us = 40
+    # frame_paused_thresh_us = 40
+    frame_paused_thresh_us = 7
+    # frame_paused_thresh_us = 12
     should_drop = False
 
     last_frame_start_us = -1
@@ -156,18 +158,19 @@ class RobustTriggerFinder:
 
         # offline: avg 4
         # online: avg 2
-        # self.stats.add_metric("frame pauses", len(frame_paused_ev_idx))
+        self.stats.add_metric("frame pauses", len(frame_paused_ev_idx))
 
         for prev_idx, next_idx in zip(frame_paused_ev_idx[:-1], frame_paused_ev_idx[1:]):
             # time between event pauses
             diff_t_event_pauses = evs["t"][next_idx] - evs["t"][prev_idx]
-
+          
             # if this time is greater than half of the frametime, it
             # is assumend that the two events are the first and last events of the frame
 
             if diff_t_event_pauses > 1e6 / self.projector_fps / 2:
                 if diff_t_event_pauses <= 1e6 / self.projector_fps and next_idx - prev_idx > MIN_EVENTS_PER_FRAME:
                     # TODO reexamine the +2 and -2
+                   
                     # The interval is trimmed a a little to ensure that the events are in the frame.
                     self.frame_callback(evs[prev_idx + 2 : next_idx - 2])
 

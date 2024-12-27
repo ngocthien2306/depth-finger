@@ -1,0 +1,13 @@
+
+material Material
+{
+	technique
+	{
+		pass 
+		{
+			emissive 0 0 1.0 1.0
+		}
+
+	}
+
+}

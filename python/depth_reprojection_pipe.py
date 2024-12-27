@@ -1,10 +1,11 @@
 from typing import Any, Callable
 
-from metavision_sdk_core import PolarityFilterAlgorithm
+from metavision_sdk_core import PolarityFilterAlgorithm, RoiFilterAlgorithm
 from metavision_sdk_cv import ActivityNoiseFilterAlgorithm
 
 from trigger_finder import RobustTriggerFinder
-from stats_printer import StatsPrinter, SingleTimer
+# from stats_printer import StatsPrinter, SingleTimer
+from stats_printer import StatsPrinter
 from cam_proj_calibration import CamProjMaps, CamProjCalibrationParams
 from x_maps_disparity import XMapsDisparity
 from proj_time_map import ProjectorTimeMap
@@ -15,24 +16,55 @@ from frame_event_filter import FrameEventFilterProcessor
 
 from dataclasses import dataclass, field
 
+import cv2
+import numpy as np
 
-def dump_frame_data(events, inlier_mask, xcr_f32, ycr_f32, disp_f32, csv_name="/ESL_data/static/seq1/frame.csv"):
-    import pandas as pd
+# import matplotlib.pyplot as plt
+import time
 
-    df = pd.DataFrame(
-        [
-            events["x"][inlier_mask].T,
-            events["y"][inlier_mask].T,
-            events["t"][inlier_mask].T,
-            xcr_f32[inlier_mask].T,
-            ycr_f32[inlier_mask].T,
-            disp_f32.T,
-        ],
-    ).T
-    df.columns = ["x", "y", "t", "x_r", "y_r", "disp"]
+from contextlib import contextmanager
 
-    df.to_csv(csv_name, index=False)
+import socket
+import threading
+import struct
+import json
 
+
+# @dataclass
+# class DepthReprojectionPipe:
+#     params: "RuntimeParams"
+#     stats_printer: StatsPrinter
+#     frame_callback: Callable
+
+#     pos_filter = PolarityFilterAlgorithm(1)
+
+#     # TODO revisit: does this have an effect on latency?
+#     act_filter: ActivityNoiseFilterAlgorithm = field(init=False)
+
+#     pos_events_buf = PolarityFilterAlgorithm.get_empty_output_buffer()
+#     # act_events_buf = None
+
+#     calib_maps: CamProjMaps = field(init=False)
+
+#     trigger_finder: RobustTriggerFinder = field(init=False)
+
+#     ev_filter_proc = FrameEventFilterProcessor()
+
+#     x_maps_disp: XMapsDisparity = field(init=False)
+#     disp_to_depth: DisparityToDepth = field(init=False)
+
+#     watchdog: TimingWatchdog = field(init=False)
+
+#     pool = EventBufPool()    
+
+##
+@contextmanager
+def timed_operation(message: str):
+    """Helper function to time operations."""
+    start_time = time.perf_counter()
+    yield  # This allows the block of code to run
+    elapsed_time = time.perf_counter() - start_time
+    print(f"{message}: {elapsed_time:.6f} seconds")
 
 @dataclass
 class DepthReprojectionPipe:
@@ -40,14 +72,19 @@ class DepthReprojectionPipe:
     stats_printer: StatsPrinter
     frame_callback: Callable
 
+    roi_filter = RoiFilterAlgorithm(x0=350, y0=120, x1=750, y1=650, output_relative_coordinates=False)
+
     pos_filter = PolarityFilterAlgorithm(1)
 
     # TODO revisit: does this have an effect on latency?
     act_filter: ActivityNoiseFilterAlgorithm = field(init=False)
 
+    roi_filter_buf = RoiFilterAlgorithm.get_empty_output_buffer()
+
     pos_events_buf = PolarityFilterAlgorithm.get_empty_output_buffer()
     # act_events_buf = None
 
+    calib_params: CamProjCalibrationParams = field(init=False)
     calib_maps: CamProjMaps = field(init=False)
 
     trigger_finder: RobustTriggerFinder = field(init=False)
@@ -62,41 +99,44 @@ class DepthReprojectionPipe:
     pool = EventBufPool()
 
     def __post_init__(self):
+        # self.setup_socket()
         self.act_filter = ActivityNoiseFilterAlgorithm(
             self.params.camera_width, self.params.camera_height, int(1e6 / self.params.projector_fps)
         )
 
-        with SingleTimer("Setting up calibration"):
-            calib_params = CamProjCalibrationParams.from_yaml(
+        with timed_operation("Setting up calibration"):
+            self.calib_params = CamProjCalibrationParams.from_yaml(
                 self.params.calib,
                 self.params.camera_width,
                 self.params.camera_height,
                 self.params.projector_width,
                 self.params.projector_height,
             )
-            self.calib_maps = CamProjMaps(calib_params)
+            self.calib_maps = CamProjMaps(self.calib_params)
 
-        with SingleTimer("Setting up projector time map"):
+        with timed_operation("Setting up projector time map"):
             if self.params.projector_time_map is not None:
                 proj_time_map = ProjectorTimeMap.from_file(self.params.projector_time_map)
             else:
-                proj_time_map = ProjectorTimeMap.from_calib(calib_params, self.calib_maps)
+                proj_time_map = ProjectorTimeMap.from_calib(self.calib_params, self.calib_maps)
 
-        with SingleTimer("Setting up projector X-map"):
+        with timed_operation("Setting up projector X-map"):
             self.x_maps_disp = XMapsDisparity(
-                calib_params=calib_params,
+                calib_params=self.calib_params,
                 cam_proj_maps=self.calib_maps,
                 proj_time_map_rect=proj_time_map.projector_time_map_rectified,
             )
 
-        with SingleTimer("Setting up disparity to depth"):
+        with timed_operation("Setting up disparity to depth"):
             self.disp_to_depth = DisparityToDepth(
                 stats=self.stats_printer,
-                calib_params=calib_params,
+                calib_params=self.calib_params,
                 calib_maps=self.calib_maps,
                 z_near=self.params.z_near,
                 z_far=self.params.z_far,
             )
+
+    
 
         self.trigger_finder = RobustTriggerFinder(
             projector_fps=self.params.projector_fps,
@@ -107,11 +147,66 @@ class DepthReprojectionPipe:
 
         self.watchdog = TimingWatchdog(stats_printer=self.stats_printer, projector_fps=self.params.projector_fps)
 
-    def process_events(self, evs):
+    # -------------------------------- pipe --------------------------------------  
+    def reload_calib(self) :
+        self.calib_params = CamProjCalibrationParams.from_yaml(
+                self.params.calib,
+                self.params.camera_width,
+                self.params.camera_height,
+                self.params.projector_width,
+                self.params.projector_height,
+            )
+        self.calib_maps = CamProjMaps(self.calib_params)
+      
+    def get_calib_bg(self, calib_name="relative_translation"):   
+        return self.calib_params.get_calib_("relative_translation")
+
+    def set_calib_bg(self, calib_value):
+        self.calib_params.set_calib_bg(calib_value)
+        self.calib_maps = CamProjMaps(self.calib_params)
+
+    def reset_depth_diff(self):
+        self.disp_to_depth.reset_depth_diff()
+    # ------------------------------- socket -------------------------------------
+    # def setup_socket(self):
+    #     CONFIG_FILE = "../localhost/config.json"
+    #     # CONFIG_FILE = "localhost/config.json"
+    #     with open(CONFIG_FILE) as f:
+    #         config = json.load(f)
+
+    #     self.ADDR:"socket._Address" = (config["addr"], config["port"])
+    #     self.STRUCT:struct.Struct = struct.Struct(config["struct"])
+
+    #     # Create a UDP socket
+    #     self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    #     self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    #     if hasattr(socket, "SO_REUSEPORT"):
+    #         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+
+    # def send_data(self, position):          
+    #     packed_data = self.STRUCT.pack(*position)
+    #     self.sock.sendto(packed_data, self.ADDR)  
+    # --------------------------------------------------------------------
+
+    def get_proj_region(self):
+        return self.disp_to_depth.get_proj_region()
+
+    def process_events(self, evs, pos=None, finger_valid=False):
         if self.watchdog.is_processing_behind(evs) and self.params.should_drop_frames:
+            # if pos is not None:                
+            #     # if pos[3] < 70:
+            #     if(finger_valid):
+            #         print(f"================= send data [drop] ==================> {pos}")
+            #         self.send_data(pos)
+            #     else:
+            #         self.send_data((0,0,0,-1))
             self.trigger_finder.drop_frame()
 
-        self.pos_filter.process_events(evs, self.pos_events_buf)
+        # Apply ROI event
+        self.roi_filter.process_events(evs, self.roi_filter_buf)
+        self.pos_filter.process_events(self.roi_filter_buf, self.pos_events_buf)
+
+        # self.pos_filter.process_events(evs, self.pos_events_buf)
 
         act_out_buf = self.pool.get_buf()
         self.act_filter.process_events(self.pos_events_buf, act_out_buf)
@@ -162,9 +257,9 @@ class DepthReprojectionPipe:
                 disp_map = self.disp_to_depth.remap_rectified_disp_map_to_proj(disp_map)
 
         with self.stats_printer.measure_time("disp2rgb"):
-            depth_map = self.disp_to_depth.colorize_depth_from_disp(disp_map)
+            depth_map, depth_nomap = self.disp_to_depth.colorize_depth_from_disp(disp_map)            
 
-        self.frame_callback(depth_map)
+        self.frame_callback(depth_map, depth_nomap)
 
     def select_next_frame_event_filter(self):
         new_filter = self.ev_filter_proc.select_next_filter()

@@ -13,7 +13,6 @@ def open_calibration_data(calib_data_path: str) -> dict:
         calibration_data = yaml.safe_load(file)
     return calibration_data
 
-
 def read_cv_matrix(calibration_data: dict, name: str) -> np.ndarray:
     """function to read an opencv matrix from yaml-dict as written by the calibration application"""
     if (
@@ -73,13 +72,17 @@ class CamProjCalibrationParams:
     cam2proj_R: np.ndarray
     cam2proj_T: np.ndarray
 
-    F: Optional[np.ndarray] = None
+    F: Optional[np.ndarray] = None    
 
     @staticmethod
     def from_yaml(
         calibration_yaml_path: str, camera_width: int, camera_height: int, projector_width: int, projector_height: int
     ):
         calibration_data = open_calibration_data(calibration_yaml_path)
+        
+        # calibration_data = open_calibration_data("TEST_CALIB.yaml")
+        # with open("TEST_CALIB.yaml", 'w') as outfile:
+        #     yaml.dump(calibration_data, outfile)
 
         # TODO make this parameter configurable, compute from camera and projector resolution?
         # rectification_scale: float = 2.75
@@ -141,7 +144,6 @@ class CamProjCalibrationParams:
             cam2proj_T=cam_proj_tvec,
         )
 
-
     def save_calib(self, calibration_yaml_path):
         calibration_data = open_calibration_data(calibration_yaml_path)        
         
@@ -183,12 +185,7 @@ class CamProjCalibrationParams:
             return self.cam2proj_T
         if calib_name == 'F':
             return self.F
-        
-    def set_calib_bg(self, calib_value):        
-        # calib_value = self.get_calib_('relative_translation')
-        # calib_value[0][0] = calib_value
-        self.cam2proj_T = calib_value
-        
+
 
 @dataclass
 class CamProjMaps:

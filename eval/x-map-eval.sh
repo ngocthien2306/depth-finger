@@ -7,21 +7,20 @@
 set -euo pipefail
 
 # may want to disable these, once computed, to avoid lengthy recomputations
-compute_mc3d=true
-compute_esl=true
-
+compute_mc3d=false
+compute_esl=false
 compute_xmaps=true
 
 # data_folder="/workspaces/CVG_EB3D_python/ESL"
 data_folder="/ESL_data"
-static_folder="$data_folder/static"
+static_folder="$data_folder/dynamic"
 mkdir -p $static_folder
 
-esl_data_url="https://rpg.ifi.uzh.ch/data/esl/static"
+esl_data_url="https://rpg.ifi.uzh.ch/data/esl/dynamic"
 
 echo "Downloading and extracting data to ${static_folder} ..."
 
-for seq_names in "seq1 book_duck" "seq2 plant" "seq3 city_of_lights" "seq4 desk" "seq5 chair" "seq6 room" "seq7 cycle" "seq8 heart" "seq9 david"
+for seq_names in "seq1 fan" 
 do
     tuple=( $seq_names );
     full_url="${esl_data_url}/${tuple[1]}/scans_np.zip"
@@ -34,7 +33,7 @@ echo "Downloading calibration..."
 wget --no-clobber "https://raw.githubusercontent.com/uzh-rpg/ESL/734bf8e88f689db79a0b291b1fb30839c6dd4130/data/calib.yaml" -P "$data_folder"
 calib_yaml="${data_folder}/calib.yaml"
 
-for seq_id in 1 2 3 4 5 6 7 8 9
+for seq_id in 1
 do
 
     seq_folder="${static_folder}/seq$seq_id/"
@@ -70,3 +69,6 @@ done
 
 echo "Running evaluation script to compare results..."
 python3 python/eval/create_evaluation_table.py -object_dir ${static_folder} -max_depth 500
+
+
+# C:\work\dataset\static\seq1\scans_np

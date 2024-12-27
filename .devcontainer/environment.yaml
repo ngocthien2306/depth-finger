@@ -18,7 +18,7 @@ dependencies:
   - opencv
   # - opend3d
   - pandas
-  # - pip
+
   - pylops==1.18.3
   - py-spy
   - pyntcloud
@@ -27,4 +27,7 @@ dependencies:
   - scipy
   - seaborn
   - tk
-
+  - pip
+  - pip:
+    - open3d
+    - cupy-cuda12x

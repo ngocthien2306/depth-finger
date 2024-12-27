@@ -1,0 +1,17 @@
+{
+
+    "$comment-address": [
+        "receiver bind on (host, port) for listen incoming data",
+        "sender send data to (addr, port)"
+    ],
+    "port": 9638,
+    "host": "",
+    "addr": "localhost",
+
+    "$comment-struct": [
+        "definition of struct is reference from here",
+        "https://docs.python.org/3/library/struct.html#format-characters",
+        "for example 'HHHH' means four unsigned shorts"
+    ],
+    "struct": "HHHf"
+}

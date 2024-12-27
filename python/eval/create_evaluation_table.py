@@ -98,15 +98,15 @@ def main():
     args = parser.parse_args()
 
     scenes = [
-        "seq9",  # Dacid
-        "seq8",  # Heart
+        # "seq9",  # Dacid
+        # "seq8",  # Heart
         "seq1",  # Book-Duck
-        "seq2",  # Plant
-        "seq3",  # City of Lights
-        "seq7",  # Cycle
-        "seq6",  # Room
-        "seq5",  # Desk-chair
-        "seq4",  # Desk books
+        # "seq2",  # Plant
+        # "seq3",  # City of Lights
+        # "seq7",  # Cycle
+        # "seq6",  # Room
+        # "seq5",  # Desk-chair
+        # "seq4",  # Desk books
     ]
 
     all_mc3d = []

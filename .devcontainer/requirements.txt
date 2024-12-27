@@ -1,0 +1,25 @@
+# Gói pip
+open3d
+cupy-cuda12x
+# Các gói khác như black, numpy, pandas, v.v. nếu cần
+black
+click
+fire
+funcy
+h5py
+ipython
+jupyter
+matplotlib
+mypy
+numba
+numpy
+opencv-python
+pandas
+pylops==1.18.3
+py-spy
+pyntcloud
+pyyaml
+scikit-video
+scipy
+seaborn
+tk

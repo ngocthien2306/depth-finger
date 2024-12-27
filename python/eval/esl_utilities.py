@@ -158,6 +158,7 @@ class utils:
         for i in range(0, num_scans):
             try:
                 d = np.load(depth_files[i]).astype(np.float32)
+                # print(d)
                 d[d >= max_d] = 0
                 d[d <= min_d] = 0
                 depth_combined += d

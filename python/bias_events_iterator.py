@@ -65,6 +65,21 @@ class NonBufferedBiasEventsIterator:
             # create live camera device interface
             device = mv_hal.DeviceDiscovery.open("")
 
+            # Access the geometry information (resolution)
+            geometry = device.get_i_geometry()
+            width = geometry.get_width()
+            height = geometry.get_height()
+
+            print(f"Camera resolution: {width} x {height}")
+
+            # digital_crop = device.get_i_digital_crop()
+
+            # region = digital_crop.get_window_region()
+          
+
+            # digital_crop.set_window_region((0, 0, 640, 480) , True) 
+
+            
             if not device:
                 print("No live camera found! Exiting...")
                 sys.exit(1)
@@ -81,6 +96,7 @@ class NonBufferedBiasEventsIterator:
             # interface = mvd_core.HalDeviceInterface(device, polling_interval)
             # controller.add_device_interface(interface)
             self.reader = RawReaderBase("", device=device, delta_t=delta_t, initiate_device=False)
+            
 
         else:
             self.reader = RawReaderBase(input_filename, delta_t=delta_t)

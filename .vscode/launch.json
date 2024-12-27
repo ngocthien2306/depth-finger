@@ -1,3 +1,4 @@
+
 {
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
@@ -11,11 +12,13 @@
             "program": "python/depth_reprojection.py",
             "args": [
                 "--bias",
-                "/workspaces/X-maps/data/nebra_evk3.0/live_cam.bias",
+                "/X-maps/ESL_data/static/seq1/data.raw",
                 "--calib",
-                "/workspaces/X-maps/data/nebra_evk3.0/X-maps_calibration_8_5mm.yaml",
+                "/X-maps/data/ESL_calib_hhi.yaml",
                 "--z-near",
                 "0.2",
+                "--input",
+                "/home/farchan/Downloads/X-maps-20240828/X-maps/data/biases.bias",
                 "--z-far",
                 "1.0",
             ],
@@ -35,19 +38,24 @@
                 "--calib",
                 "data/ESL_calib_hhi.yaml",
                 "--bias",
-                "/ESL_data/static/seq1/data.bias",
+                "ESL_data/dynamic/seq1/data.bias",
                 "--input",
-                "/ESL_data/static/seq1/data.raw",
+                "ESL_data/dynamic/seq1/data.raw",
                 "--z-near",
                 "0.1",
                 "--z-far",
                 "1.2",
-                "--no-frame-dropping",
-                // "--loop-input",
-                // "--camera-perspective"
+                // "--no-frame-dropping",
+                "--loop-input",
+                "--camera-perspective"
             ],
             "console": "integratedTerminal",
             "justMyCode": true,
+            // "env": {
+            //     "NUMBA_NUM_THREADS": ""
+            // }
         },
+        
+        
     ]
 }

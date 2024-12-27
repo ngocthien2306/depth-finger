@@ -4,7 +4,9 @@ import glob
 import os.path
 import sys
 import time
-
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot as plt
 import cv2
 import numpy as np
 import pandas as pd
@@ -109,9 +111,10 @@ def main():
                 events=events, inlier_mask=inlier_mask, ev_disparity_f32=ev_disparity_f32
             )
 
-            print("Completed disparity estimation: " + str(i) + " in time " + str(time.time() - start))
+            print("Completed disparity estimation: " + str(i) + " in time " + str((time.time() - start)*1000)+ "ms")
 
             depth_init = disparity_to_depth_rectified(disparity, cam_proj_maps.P2)
+            
 
             np.save(os.path.join(depth_dir, "scans" + str(i).zfill(3) + ".npy"), depth_init)
 

@@ -42,7 +42,7 @@ def human_readable_qty_per_second(qty, elapsed_ns):
 
 @dataclass
 class Occurences:
-    occurences: Dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    occurences: Dict[str, int] = field(default_factory=lambda: defaultdict(int))    
 
     def count(self, name: str, qty: int = 1):
         self.occurences[name] += qty
@@ -73,7 +73,48 @@ class Occurences:
             str += append
 
         print(str)
+        ##
+        #print(self.print_total_frames(elapsed_ns))
+        
+        #print(f"===> frames dropped {self.occurences['frames dropped']}")
+
         return lines
+
+    # def print_total_frames(self, elapsed_ns):
+    #     str = "avg per sec "
+    #     lines = 1
+    #     frames_dropped = 0
+    #     frames_shown = 0
+    #     first_row_processed = False
+
+    #     for name, occ in sorted(self.occurences.items()):
+    #         append = f"#{name}: {human_readable_qty_per_second(occ, elapsed_ns)} | "
+
+    #         # # Process only the first row
+    #         # if not first_row_processed:
+    #         #     if name == "frames dropped":
+    #         #         frames_dropped = occ  # Capture the value for frames dropped
+    #         #         # print(frames_dropped)
+    #         #     elif name == "frames shown":
+    #         #         frames_shown = occ  # Capture the value for frames shown
+    #         #         # print(frames_shown)
+
+    #             # # Check if both frames dropped and shown have been found
+    #             # if frames_dropped and frames_shown:
+    #             #     first_row_processed = True  
+
+    #     #     if len(str + append) > max_cols():
+    #     #         # print(str)
+    #     #         str = "             "
+    #     #         lines += 1
+    #     #     str += append
+
+    #     # # Calculate the total of frames dropped and frames shown
+    #     # total_first_row_frames = frames_dropped + frames_shown
+
+    #     # print(f"Total frames dropped and shown: {total_first_row_frames:.2f}") 
+    #     # return total_first_row_frames
+    #     return self.occurences.keys()
 
     def reset(self):
         for name in self.occurences.keys():
@@ -151,6 +192,12 @@ class Stats:
 
     def print_avg_time_measures(self):
         return self.time_measures.print_avg()
+    
+    def get_frame_drop(self):
+        return self.occurences['frames dropped']
+
+    def get_frame_show(self):
+        return self.occurences['frames shown']
 
     def reset(self):
         self.occurences.reset()
@@ -179,6 +226,9 @@ class StatsPrinter:
 
     local_stats: Stats = Stats()
     global_stats: Stats = Stats()
+
+    _local_frame_drop: int = 0
+    _local_frame_show: int = 0
 
     def count(self, key, qty=1):
         """Count occurrences of a certain type (e.g. "trigger found")"""
@@ -228,6 +278,9 @@ class StatsPrinter:
         self.local_stats.reset()
         self.global_stats.reset()
 
+    def get_local_frame(self):
+        return {"frame_drop": self._local_frame_drop, "frame_show": self._local_frame_show,}
+
     def print_stats(self):
         if not self.should_print:
             return
@@ -256,6 +309,15 @@ class StatsPrinter:
 
         print(f"{local_avg_color}", end="")
         self.printed_lines += self.local_stats.print_avg_occurrences(self.local_stats.elapsed_ns())
+        #print( self.local_stats.print_avg_occurrences(self.local_stats.elapsed_ns()))
+        #print("===> frame drops: ", self.local_stats.get_frame_drop())
+        #print("===> frame shown: ", self.local_stats.get_frame_show())
+        self._local_frame_drop = self.local_stats.get_frame_drop()
+        self._local_frame_show = self.local_stats.get_frame_show()
+
+
+
+
         print(f"{global_avg_color}", end="")
         self.printed_lines += self.global_stats.print_avg_occurrences(self.global_stats.elapsed_ns())
         print(f"{global_tot_color}", end="")
@@ -345,3 +407,22 @@ class SingleTimer:
     def __exit__(self, *exc_info):
         self.stop()
         return False
+
+
+def print_total(self):
+        lines = 1
+        parts = ["total count "]
+        for name, occ in sorted(self.occurences.items()):
+            append = f"#{name}: {human_readable_qty(occ)} | "
+            if len(''.join(parts) + append) > max_cols():
+                print(''.join(parts))
+                parts = ["           "]  # Reset for next line
+                lines += 1
+            parts.append(append)
+
+        print(''.join(parts))
+        return lines
+
+if __name__ == '__main__':
+    calculate = print_total()
+    print(calculate)
